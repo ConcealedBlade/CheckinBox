@@ -1,12 +1,15 @@
-import requests, json, time, os, re
-
+import requests, json, time, os, re, sys
+sys.path.append('.')
 requests.packages.urllib3.disable_warnings()
+try:
+    from pusher import pusher
+except:
+    pass
 
 cookie = os.environ.get("cookie_v2ex")
 
 def run(*arg):
     msg = ""
-    SCKEY = os.environ.get('SCKEY')
     s = requests.Session()
     s.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36'})
 
@@ -22,13 +25,7 @@ def run(*arg):
     # print(r.text)
     if '需要先登录' in r.text:
         msg = "cookie失效啦！！！！\n"
-        scurl = f"https://sc.ftqq.com/{SCKEY}.send"
-        data = {
-            "text" : "V2EX  Cookie失效啦！！！",
-            "desp" : r.text
-            }
-        requests.post(scurl, data=data)
-        print(msg)
+        pusher("V2EX  Cookie失效啦！！！", r.text[:200])
         return msg
     elif '每日登录奖励已领取' in r.text:
         msg = '今天已经签到过啦！！！\n'
@@ -48,20 +45,22 @@ def run(*arg):
         r = s.get(check_url, headers=headers, verify=False, timeout=120)
         data = re.compile(r'\d+?\s的每日登录奖励\s\d+\s铜币').search(r.text)
         msg += data[0] + '\n'
+    elif '登录' in sign.text:
+        msg = "cookie失效啦！！！！\n"
+        pusher("V2EX  Cookie失效啦！！！")
+        return msg
     else:
         msg = '签到失败！\n'
-        scurl = f"https://sc.ftqq.com/{SCKEY}.send"
-        data = {
-            "text" : "V2EX  签到失败！！！",
-            "desp" : sign.text
-            }
-        requests.post(scurl, data=data)
+        pusher("V2EX  签到失败！！！", sign.text[:200])
     return msg
 
 def main(*arg):
     msg = ""
     global cookie
-    clist = cookie.split("\n")
+    if "\\n" in cookie:
+        clist = cookie.split("\\n")
+    else:
+        clist = cookie.split("\n")
     i = 0
     while i < len(clist):
         msg += f"第 {i+1} 个账号开始执行任务\n"

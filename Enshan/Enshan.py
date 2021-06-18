@@ -1,12 +1,16 @@
-import requests, json, time, os
-from lxml import etree
+import requests, json, time, os, sys
+sys.path.append('.')
 requests.packages.urllib3.disable_warnings()
+try:
+    from pusher import pusher
+except:
+    pass
+from lxml import etree
 
 cookie = os.environ.get("cookie_enshan")
 
 def run(*arg):
     msg = ""
-    SCKEY = os.environ.get('SCKEY')
     s = requests.Session()
     s.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0'})
 
@@ -30,22 +34,19 @@ def run(*arg):
             data = h.xpath('//tr/td[6]/text()')
             msg += f'签到成功或今日已签到，最后签到时间：{data[0]}'
         else:
-            msg += '签到失败，可能是cookie失效了！'
-            scurl = f"https://sc.ftqq.com/{SCKEY}.send"
-            data = {
-                "text" : "恩山论坛  签到失败，可能是cookie失效了！！！",
-                "desp" : r.text
-                }
-            requests.post(scurl, data=data)
+            msg += '恩山论坛签到失败，可能是cookie失效了！'
+            pusher(msg)
     except:
         msg = '无法正常连接到网站，请尝试改变网络环境，试下本地能不能跑脚本，或者换几个时间点执行脚本'
-        print(msg)
     return msg + '\n'
 
 def main(*arg):
     msg = ""
     global cookie
-    clist = cookie.split("\n")
+    if "\\n" in cookie:
+        clist = cookie.split("\\n")
+    else:
+        clist = cookie.split("\n")
     i = 0
     while i < len(clist):
         msg += f"第 {i+1} 个账号开始执行任务\n"
